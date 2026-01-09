@@ -1,19 +1,23 @@
 import { Entity } from './Entity.js';
 import { randomRange } from '../utils/helpers.js';
 import { CONFIG } from '../config.js';
+import { smoothNoise } from '../systems/Noise.js';
 
 export class CartoonBlob extends Entity {
     constructor(position){
         super(position);
         this.size = randomRange(CONFIG.entityMinSize, CONFIG.entityMaxSize/2);
-        this.color = randomRange(0,360);
-        this.color = `hsl(${this.color}, 80%, 65%)`;
+        this.baseColorHue = randomRange(0,360);
+        this.color = `hsl(${this.baseColorHue}, 80%, 65%)`;
         this.blobs = [];
+        this.time = Math.random()*1000; // tempo interno para animação orgânica
+
         const numBlobs = Math.floor(randomRange(3, CONFIG.maxBlobsPerEntity));
         for(let i=0; i<numBlobs; i++){
             this.blobs.push({
                 offset: { x: randomRange(-this.size, this.size), y: randomRange(-this.size, this.size) },
-                radius: randomRange(this.size*0.3, this.size*0.6)
+                radius: randomRange(this.size*0.3, this.size*0.6),
+                phase: Math.random()*10 // para deformação independente
             });
         }
         this.state = 'growing';
@@ -21,7 +25,9 @@ export class CartoonBlob extends Entity {
 
     update(world){
         super.update(world);
+        this.time += 0.01;
 
+        // Crescimento procedural
         if(this.state === 'growing'){
             this.size += CONFIG.growthSpeed;
             if(this.size > CONFIG.entityMaxSize) this.state = 'shrinking';
@@ -30,11 +36,18 @@ export class CartoonBlob extends Entity {
             if(this.size < CONFIG.entityMinSize) this.state = 'growing';
         }
 
-        // atualizar blobs proporcional ao tamanho
+        // Atualizar blobs com deformação orgânica
         for(let b of this.blobs){
-            b.radius = this.size * 0.3 + Math.random()*this.size*0.3;
-            b.offset.x += Math.random()*0.5 - 0.25;
-            b.offset.y += Math.random()*0.5 - 0.25;
+            // Mudança suave no offset usando ruído
+            b.offset.x += (smoothNoise(this.time + b.phase) - 0.5) * 0.5;
+            b.offset.y += (smoothNoise(this.time + b.phase + 100) - 0.5) * 0.5;
+
+            // Deformação do raio para respiração
+            b.radius = this.size * 0.3 + smoothNoise(this.time + b.phase) * this.size * 0.3;
         }
+
+        // Mudança de cor sutil
+        const hueVariation = (smoothNoise(this.time) - 0.5) * 30; // +/-15 graus
+        this.color = `hsl(${(this.baseColorHue + hueVariation)%360}, 80%, 65%)`;
     }
 }
