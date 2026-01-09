@@ -1,5 +1,3 @@
-import { randomRange } from '../utils/helpers.js';
-
 export class BlobSprite {
     constructor(){
         this.strokeColor = 'black';
