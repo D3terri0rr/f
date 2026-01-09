@@ -10,7 +10,7 @@ const ctx = canvas.getContext('2d');
 
 const world = new World(ctx, canvas.width, canvas.height);
 
-// Criar entidades
+// Criar entidades cartunescas vivas
 for(let i=0; i<CONFIG.entityCount; i++){
     const entity = new CartoonBlob({ x: Math.random()*canvas.width, y: Math.random()*canvas.height });
     entity.sprite = new BlobSprite();
